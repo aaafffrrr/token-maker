@@ -19,7 +19,7 @@
             <!-- Used to display form errors. -->
             <div id="card-errors" role="alert"></div>
         </div>
-        <button class="btn btn-primary" type="submit">Submit Payment</button>
+        <button class="btn btn-primary" type="submit">Generate Token</button>
     </form>
 </div>
 
@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var card = elements.create("card", { style: style });
     card.mount("#card-element");
 
-    card.addEventListener('change', function (event) {
+    card.on('change', function (event) {
         var displayError = document.getElementById('card-errors');
         if (event.error) {
             displayError.textContent = event.error.message;
@@ -59,36 +59,28 @@ document.addEventListener("DOMContentLoaded", function () {
     form.addEventListener('submit', function (event) {
         event.preventDefault();
 
-        stripe.createPaymentMethod({
-            type: 'card',
-            card: card,
-        }).then(function (result) {
+        stripe.createToken(card).then(function (result) {
             if (result.error) {
                 var errorElement = document.getElementById('card-errors');
                 errorElement.textContent = result.error.message;
             } else {
-                fetch('/create_payment_intent', {
+                fetch('/receive_token', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        payment_method: result.paymentMethod.id
+                        token: result.token.id
                     })
                 }).then(function (response) {
                     return response.json();
-                }).then(function (paymentIntentResponse) {
-                    stripe.confirmCardPayment(paymentIntentResponse.client_secret).then(function (result) {
-                        if (result.error) {
-                            var errorElement = document.getElementById('card-errors');
-                            errorElement.textContent = result.error.message;
-                        } else {
-                            if (result.paymentIntent.status === 'succeeded') {
-                                var messages = document.getElementById('messages');
-                                messages.innerHTML = '<div class="alert alert-success">Payment succeeded!</div>';
-                            }
-                        }
-                    });
+                }).then(function (data) {
+                    var messages = document.getElementById('messages');
+                    if (data.status === 'success') {
+                        messages.innerHTML = '<div class="alert alert-success">Token generated and received successfully!</div>';
+                    } else {
+                        messages.innerHTML = '<div class="alert alert-danger">There was an error receiving the token.</div>';
+                    }
                 });
             }
         });
