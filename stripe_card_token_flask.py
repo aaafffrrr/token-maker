@@ -19,10 +19,13 @@ def index():
 @app.route('/create_payment_intent', methods=['POST'])
 def create_payment_intent():
     try:
+        payment_method_id = request.json.get('payment_method_id')
         intent = stripe.PaymentIntent.create(
             amount=1000,  # Specify the amount in cents
             currency='usd',
-            payment_method_types=['card'],
+            payment_method=payment_method_id,
+            confirmation_method='manual',
+            confirm=True,
         )
         return jsonify({'client_secret': intent.client_secret})
     except Exception as e:
