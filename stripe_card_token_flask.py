@@ -16,7 +16,7 @@ def receive_token():
     token = request.json.get('token')
     print(f"Received token: {token}")
     # Here you can do something with the token, like save it to your database
-    return jsonify({'status': 'success'}), 200
+    return jsonify({'status': 'success', 'token': token}), 200
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
