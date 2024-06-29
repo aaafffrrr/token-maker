@@ -4,38 +4,96 @@
     <meta charset="UTF-8">
     <title>Stripe Card Token Generator</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
 <div class="container">
     <h2 class="mt-5">Stripe Card Token Generator</h2>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="mt-4">
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">{{ message }}</div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
-    <form action="/create_token" method="post" class="mt-4">
+    <div id="messages"></div>
+    <form id="payment-form" class="mt-4">
         <div class="form-group">
-            <label for="card_number">Card Number</label>
-            <input type="text" class="form-control" id="card_number" name="card_number" required>
+            <label for="card-element">Credit or debit card</label>
+            <div id="card-element" class="form-control">
+                <!-- A Stripe Element will be inserted here. -->
+            </div>
+            <!-- Used to display form errors. -->
+            <div id="card-errors" role="alert"></div>
         </div>
-        <div class="form-group">
-            <label for="exp_month">Expiration Month (MM)</label>
-            <input type="text" class="form-control" id="exp_month" name="exp_month" required>
-        </div>
-        <div class="form-group">
-            <label for="exp_year">Expiration Year (YYYY)</label>
-            <input type="text" class="form-control" id="exp_year" name="exp_year" required>
-        </div>
-        <div class="form-group">
-            <label for="cvc">CVC</label>
-            <input type="text" class="form-control" id="cvc" name="cvc" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Generate Token</button>
+        <button class="btn btn-primary" type="submit">Submit Payment</button>
     </form>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    var stripe = Stripe('{{ publishable_key }}');
+    var elements = stripe.elements();
+    var style = {
+        base: {
+            color: "#32325d",
+            fontFamily: 'Arial, sans-serif',
+            fontSmoothing: "antialiased",
+            fontSize: "16px",
+            "::placeholder": {
+                color: "#aab7c4"
+            }
+        },
+        invalid: {
+            color: "#fa755a",
+            iconColor: "#fa755a"
+        }
+    };
+
+    var card = elements.create("card", { style: style });
+    card.mount("#card-element");
+
+    card.addEventListener('change', function (event) {
+        var displayError = document.getElementById('card-errors');
+        if (event.error) {
+            displayError.textContent = event.error.message;
+        } else {
+            displayError.textContent = '';
+        }
+    });
+
+    var form = document.getElementById('payment-form');
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        stripe.createPaymentMethod({
+            type: 'card',
+            card: card,
+        }).then(function (result) {
+            if (result.error) {
+                var errorElement = document.getElementById('card-errors');
+                errorElement.textContent = result.error.message;
+            } else {
+                fetch('/create_payment_intent', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        payment_method: result.paymentMethod.id
+                    })
+                }).then(function (response) {
+                    return response.json();
+                }).then(function (paymentIntentResponse) {
+                    stripe.confirmCardPayment(paymentIntentResponse.client_secret).then(function (result) {
+                        if (result.error) {
+                            var errorElement = document.getElementById('card-errors');
+                            errorElement.textContent = result.error.message;
+                        } else {
+                            if (result.paymentIntent.status === 'succeeded') {
+                                var messages = document.getElementById('messages');
+                                messages.innerHTML = '<div class="alert alert-success">Payment succeeded!</div>';
+                            }
+                        }
+                    });
+                });
+            }
+        });
+    });
+});
+</script>
 </body>
 </html>
