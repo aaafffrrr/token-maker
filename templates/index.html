@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Stripe Card Token Generator</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <h2 class="mt-5">Stripe Card Token Generator</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mt-4">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    <form action="/create_token" method="post" class="mt-4">
+        <div class="form-group">
+            <label for="card_number">Card Number</label>
+            <input type="text" class="form-control" id="card_number" name="card_number" required>
+        </div>
+        <div class="form-group">
+            <label for="exp_month">Expiration Month (MM)</label>
+            <input type="text" class="form-control" id="exp_month" name="exp_month" required>
+        </div>
+        <div class="form-group">
+            <label for="exp_year">Expiration Year (YYYY)</label>
+            <input type="text" class="form-control" id="exp_year" name="exp_year" required>
+        </div>
+        <div class="form-group">
+            <label for="cvc">CVC</label>
+            <input type="text" class="form-control" id="cvc" name="cvc" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Generate Token</button>
+    </form>
+</div>
+</body>
+</html>
