@@ -21,6 +21,11 @@
         </div>
         <button class="btn btn-primary" type="submit">Generate Token</button>
     </form>
+    <div id="token-container" class="mt-4" style="display: none;">
+        <label for="token">Generated Token</label>
+        <textarea id="token" class="form-control" rows="3" readonly></textarea>
+        <button id="copy-token" class="btn btn-secondary mt-2">Copy Token</button>
+    </div>
 </div>
 
 <script>
@@ -78,12 +83,24 @@ document.addEventListener("DOMContentLoaded", function () {
                     var messages = document.getElementById('messages');
                     if (data.status === 'success') {
                         messages.innerHTML = '<div class="alert alert-success">Token generated and received successfully!</div>';
+                        var tokenContainer = document.getElementById('token-container');
+                        var tokenTextarea = document.getElementById('token');
+                        tokenTextarea.value = data.token;
+                        tokenContainer.style.display = 'block';
                     } else {
                         messages.innerHTML = '<div class="alert alert-danger">There was an error receiving the token.</div>';
                     }
                 });
             }
         });
+    });
+
+    var copyButton = document.getElementById('copy-token');
+    copyButton.addEventListener('click', function () {
+        var tokenTextarea = document.getElementById('token');
+        tokenTextarea.select();
+        document.execCommand('copy');
+        alert('Token copied to clipboard!');
     });
 });
 </script>
